@@ -31,7 +31,6 @@
  *
  * 1.2a last version by JohanTheGhost
  * 1.3 add barbar separator and allow collapsing. John Bray
- * 1.4 add SimpleTable button to editor
  *
  * Thanks for contributions to:
  *	Smcnaught
@@ -44,13 +43,7 @@ $wgExtensionCredits['parserhook'][] = array(
   'author'=>'Johan the Ghost',
   'url'=>'http://www.mediawiki.org/wiki/Extension:SimpleTable',
   'description'=>'Convert tab-separated or similar data into a Wiki table',
-);
-
-$wgResourceModules['ext.SimpleTable'] = array('localBasePath' => __DIR__, 'scripts' => 'SimpleTable.js');   
-$wgHooks['EditPage::showEditForm:initial'][] = 'SyntaxHighlight_addModule';
-function SyntaxHighlight_addModule(EditPage $editPage, OutputPage $output)
-{$output->addModules('ext.SimpleTable');}
- 
+); 
  
 /*
  * Setup SimpleTable extension.
