@@ -30,6 +30,7 @@
  *                        border-colapse to give the table a black 1px border
  *
  * 1.2a last version by JohanTheGhost
+ * 1.3 add barbar separator and allow collapsing. John Bray
  *
  * Thanks for contributions to:
  *	Smcnaught
@@ -67,7 +68,8 @@ class SimpleTable {
         'comma' => '/,/',
         'colon' => '/:/',
         'semicolon' => '/;/',
-        'bar' => '/\|/',
+	'bar' => '/\|/',
+	'barbar' => '/\|\|`/',
     );
  
  
@@ -97,7 +99,8 @@ class SimpleTable {
         // Build the table parameters string from the tag parameters.
         // The 'sep' and 'head' parameters are special, and are handled
         // here, not passed to the table.
-        $params = '';
+	$params = 'data-expandtext="+" data-collapsetext="-"';
+	$collapse = '';
         foreach ($argv as $key => $val) {
             if ($key == 'sep')
                 $sep = $val;
@@ -105,9 +108,12 @@ class SimpleTable {
                 $head = $val;
             else if ($key == 'applycssborderstyle') 
                 $applycssborderstyle = $val;
+            else if ($key == 'collapse')
+		$collapse= 'mw-collapsed';
             else
                 $params .= ' ' . $key . '="' . $val . '"';
         }
+        $params .= ' ' . 'class="wikitable mw-collapsible ' . $collapse . '"';
  
         if (!array_key_exists($sep, $this->separators))
             return "Invalid separator: $sep";
