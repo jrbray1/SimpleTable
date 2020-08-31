@@ -165,7 +165,12 @@ class SimpleTable {
             $col = 0;
             foreach ($fields as $field) {
                 $cbar = strpos($head, 'left') !== false && $col == 0 ? '!' : $bar;
-                $wikitab .= $cbar . " " . $field . "\n";
+                if ($col < sizeof($fields)-1) {
+		  /* don't wrap for all but last column */
+                  $wikitab .= $cbar . ' <span style="white-space: nowrap;">' . $field . "</span>\n";
+                } else {
+                  $wikitab .= $cbar . " " . $field . "\n";
+                }
                 ++$col;
             }
             ++$row;
