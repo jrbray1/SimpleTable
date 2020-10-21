@@ -1,0 +1,14 @@
+{
+        "name": "SimpleTable",
+        "author": "Johan the Ghost",
+        "url": "http://www.mediawiki.org/wiki/Extension:SimpleTable",
+        "description": "Convert tab-separated or similar data into a Wiki table",
+        "type": "parserhook",
+        "requires": {
+                "MediaWiki": ">= 1.29.0"
+        },
+        "ExtensionFunctions": [
+                "wfSimpleTable"
+        ],
+        "manifest_version": 2
+}
