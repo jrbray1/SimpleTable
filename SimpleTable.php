@@ -36,6 +36,9 @@
  *	Smcnaught
  *	Frederik Dohr
  */
+
+/* JRB https://www.mediawiki.org/wiki/Topic:Vvonuq8x9kcq522j */
+use MediaWiki\MediaWikiServices;
  
 $wgExtensionFunctions[] = 'wfSimpleTable';
 $wgExtensionCredits['parserhook'][] = array(
@@ -75,11 +78,21 @@ class SimpleTable {
     /*
      * Construct the extension and install it as a parser hook.
      */
+
+    /* JRB remove warning message that $wgParser deprecated from mediawiki 1.32
+       https://www.mediawiki.org/wiki/Topic:Vvonuq8x9kcq522j */
+     
+    /*
     public function __construct() {
         global $wgParser;
         $wgParser->setHook('tab', array(&$this, 'hookTab'));
     }
- 
+    */
+
+    public function __construct() {
+      $parser = MediaWikiServices::getInstance()->getParser();
+      $parser->setHook('tab', array(&$this, 'hookTab'));
+    } 
  
     /*
      * The hook function. Handles <tab></tab>.
