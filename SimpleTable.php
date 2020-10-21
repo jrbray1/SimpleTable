@@ -31,7 +31,7 @@
  *
  * 1.2a last version by JohanTheGhost
  * 1.3 add barbar separator and allow collapsing. John Bray
- *
+ * 1.4 Stop using wgParser, allow LoadExtension. John Bray
  * Thanks for contributions to:
  *	Smcnaught
  *	Frederik Dohr
@@ -48,16 +48,16 @@ $wgExtensionCredits['parserhook'][] = array(
   'description'=>'Convert tab-separated or similar data into a Wiki table',
 ); 
  
-/*
- * Setup SimpleTable extension.
- * Sets a parser hook for <tab></tab>.
- */
-function wfSimpleTable() {
-    new SimpleTable();
-}
- 
- 
 class SimpleTable {
+
+    /*
+     * Setup SimpleTable extension.
+     * Sets a parser hook for <tab></tab>.
+    */
+
+    function wfSimpleTable() {
+      new SimpleTable();
+    }
  
     /*
      * The permitted separators.  An array of separator style name
