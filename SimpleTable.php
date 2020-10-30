@@ -31,76 +31,45 @@
  *
  * 1.2a last version by JohanTheGhost
  * 1.3 add barbar separator and allow collapsing. John Bray
- * 1.4 Stop using wgParser, allow LoadExtension. John Bray
+ * 2.0 rewrite registration procedure. John Bray
+ *
  * Thanks for contributions to:
  *	Smcnaught
  *	Frederik Dohr
  */
 
-/* JRB https://www.mediawiki.org/wiki/Topic:Vvonuq8x9kcq522j */
-use MediaWiki\MediaWikiServices;
- 
-$wgExtensionFunctions[] = 'wfSimpleTable';
-$wgExtensionCredits['parserhook'][] = array(
-  'name'=>'SimpleTable',
-  'author'=>'Johan the Ghost',
-  'url'=>'http://www.mediawiki.org/wiki/Extension:SimpleTable',
-  'description'=>'Convert tab-separated or similar data into a Wiki table',
-); 
- 
 class SimpleTable {
 
-    /*
-     * Setup SimpleTable extension.
-     * Sets a parser hook for <tab></tab>.
-    */
 
-    function wfSimpleTable() {
-      new SimpleTable();
+    // Register any tab callbacks with the parser
+    public static function onParserFirstCallInit( Parser $parser ) {
+        // When the parser sees the <tav> tag, it executes hookTab (see below)
+        $parser->setHook( 'tab', [ self::class, 'hookTab' ] );
     }
- 
+
     /*
-     * The permitted separators.  An array of separator style name
-     * and preg pattern to match it.
+     * The hook function. Handles <tab></tab>.
+     * Receives the table content and <tab> parameters.
      */
-    private $separators = array(
+    public static function hookTab( $tableText, array $args, Parser $parser, PPFrame $frame ) {
+
+      /*
+       * The permitted separators.  An array of separator style name
+       * and preg pattern to match it.
+       */
+      $separators = array(
         'space' => '/ /',
         'spaces' => '/\s+/',
         'tab' => '/\t/',
         'comma' => '/,/',
         'colon' => '/:/',
         'semicolon' => '/;/',
-	'bar' => '/\|/',
-	'barbar' => '/\|\|`/',
-    );
- 
- 
-    /*
-     * Construct the extension and install it as a parser hook.
-     */
+        'bar' => '/\|/',
+        'barbar' => '/\|\|`/',
+      );
 
-    /* JRB remove warning message that $wgParser deprecated from mediawiki 1.32
-       https://www.mediawiki.org/wiki/Topic:Vvonuq8x9kcq522j */
-     
-    /*
-    public function __construct() {
-        global $wgParser;
-        $wgParser->setHook('tab', array(&$this, 'hookTab'));
-    }
-    */
-
-    public function __construct() {
-      $parser = MediaWikiServices::getInstance()->getParser();
-      $parser->setHook('tab', array(&$this, 'hookTab'));
-    } 
- 
-    /*
-     * The hook function. Handles <tab></tab>.
-     * Receives the table content and <tab> parameters.
-     */
-    public function hookTab($tableText, $argv, $parser) {
         // The default field separator.
-        $sep = 'tab';
+        $sep = 'barbar';
  
         // Default value for using table headings.
         $head = null;
@@ -113,7 +82,8 @@ class SimpleTable {
         // here, not passed to the table.
 	$params = 'data-expandtext="+" data-collapsetext="-"';
 	$collapse = '';
-        foreach ($argv as $key => $val) {
+
+        foreach ($args as $key => $val) {
             if ($key == 'sep')
                 $sep = $val;
             else if ($key == 'head')
@@ -125,23 +95,54 @@ class SimpleTable {
             else
                 $params .= ' ' . $key . '="' . $val . '"';
         }
+
         $params .= ' ' . 'class="wikitable mw-collapsible ' . $collapse . '"';
  
-        if (!array_key_exists($sep, $this->separators))
+        if (!array_key_exists($sep, $separators))
             return "Invalid separator: $sep";
  
         // Parse and convert the table body.
-        $wikiText = $this->convertTable($tableText, $head, $this->separators[$sep], $applycssborderstyle);
+        $pattern=$separators[$sep];
+
+        $wikitab = '';
+
+        // Remove initial and final newlines.
+        $tableText = trim($tableText);
+
+        // Split the input into lines, and convert each line to table format.
+        $lines = preg_split('/\n/', $tableText);
+        $row = 0;
+        foreach ($lines as $line) {
+            $wikitab .= "|-\n";
+            $bar = strpos($head, 'top') !== false && $row == 0 ? '!' : '|';
+
+            if ($applycssborderstyle !== false) {
+              $bar = $bar . 'style="border-style: solid; border-width: 1px" |';
+            }
+
+            $fields = preg_split($pattern, $line);
+            $col = 0;
+            foreach ($fields as $field) {
+                $cbar = strpos($head, 'left') !== false && $col == 0 ? '!' : $bar;
+                if ($col < sizeof($fields)-1) {
+                  /* don't wrap for all but last column */
+                  $wikitab .= $cbar . ' <span style="white-space: nowrap;">' . $field . "</span>\n";
+                } else {
+                  $wikitab .= $cbar . " " . $field . "\n";
+                }
+                ++$col;
+            }
+            ++$row;
+        }
  
         // If we are not to apply the css border style
         if ($applycssborderstyle == false) {
           // Wrap the body in table tags, with the table parameters.
-          $wikiTable = "{|" . $params . "\n" . $wikiText . "|}";
+          $wikiTable = "{|" . $params . "\n" . $wikitab . "|}";
         } else {
           $tablestyletext = 'style="border-collapse: collapse; border-width: 1px; border-style: solid; border-color: #000"';
-          $wikiTable = "{|" . $tablestyletext . " " . $params . "\n" . $wikiText . "|}";
+          $wikiTable = "{|" . $tablestyletext . " " . $params . "\n" . $wikiitab . "|}";
         }
- 
         // Done.  Parse the result, so that the table can contain Wiki
         // text.  Thanks to Smcnaught.
         $ret = $parser->parse($wikiTable,
@@ -152,43 +153,4 @@ class SimpleTable {
 	$HTML = trim( str_replace("</table>\n\n", "</table>", $ret->getText()) ); # remove superfluous newlines
         return $HTML;
     }
- 
- 
-    /*
-     * Convert tabbed data into a Wiki-markup table body.
-     */
-    private function convertTable($tabbed, $head, $pattern, $applycssborderstyle) {
-        $wikitab = '';
- 
-        // Remove initial and final newlines.
-        $tabbed = trim($tabbed);
- 
-        // Split the input into lines, and convert each line to table format.
-        $lines = preg_split('/\n/', $tabbed);
-        $row = 0;
-        foreach ($lines as $line) {
-            $wikitab .= "|-\n";
-            $bar = strpos($head, 'top') !== false && $row == 0 ? '!' : '|';
-
-            if ($applycssborderstyle !== false) {
-              $bar = $bar . 'style="border-style: solid; border-width: 1px" |';
-            } 
-
-            $fields = preg_split($pattern, $line);
-            $col = 0;
-            foreach ($fields as $field) {
-                $cbar = strpos($head, 'left') !== false && $col == 0 ? '!' : $bar;
-                if ($col < sizeof($fields)-1) {
-		  /* don't wrap for all but last column */
-                  $wikitab .= $cbar . ' <span style="white-space: nowrap;">' . $field . "</span>\n";
-                } else {
-                  $wikitab .= $cbar . " " . $field . "\n";
-                }
-                ++$col;
-            }
-            ++$row;
-        }
-        return $wikitab;
-    }
- 
 }
